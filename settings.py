@@ -22,3 +22,6 @@ PAGES_TO_MONITOR = [
 # Cybersecurity settings
 IMPORTANT_SECURITY_HEADERS = ["Strict-Transport-Security", "Content-Security-Policy", "X-Frame-Options", "X-Content-Type-Options"]
 ANOMALY_RESPONSE_TIME_MULTIPLIER = 2.5
+
+# AI Settings
+GROQ_API_KEY = os.getenv("GROQ_API_KEY", "")   # Get free key from https://console.groq.com
