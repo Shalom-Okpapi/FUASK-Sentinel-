@@ -13,20 +13,20 @@ class Notifier:
         message += f"🔗 {url}\n"
         
         if status == 200:
-            message += f"⚡ Response: {result['response_time']}s\n"
-            message += f"🔒 Security Score: {result['security_score']}/100\n"
+            message += f"⚡ {result['response_time']}s | Security: {result['security_score']}/100\n"
+            
+            if result.get("ai_summary"):
+                message += f"\n📝 AI Summary:\n{result['ai_summary']}\n"
             
             if result.get("ssl", {}).get("days_left"):
-                days = result["ssl"]["days_left"]
-                message += f"🔐 SSL Expires in {days} days\n"
+                message += f"🔐 SSL: {result['ssl']['days_left']} days left\n"
         else:
             message += f"❌ Status: {status}\n"
         
         if result.get("anomalies"):
-            message += "⚠️ Anomalies: " + ", ".join(result["anomalies"]) + "\n"
+            message += "⚠️ " + ", ".join(result["anomalies"]) + "\n"
         
         message += f"🕒 {datetime.now().strftime('%d %b %Y, %I:%M %p WAT')}"
-        
         return message
 
     @staticmethod
