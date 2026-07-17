@@ -2,9 +2,9 @@ import requests
 import hashlib
 import json
 from datetime import datetime
-from .settings import PAGES_TO_MONITOR
-from .security_analyzer import SecurityAnalyzer
-from .ai_summarizer import AISummarizer
+from settings import PAGES_TO_MONITOR
+from security_analyzer import SecurityAnalyzer
+from ai_summarizer import AISummarizer
 
 ai_summarizer = AISummarizer()
 
