@@ -5,6 +5,7 @@ from datetime import datetime
 from settings import PAGES_TO_MONITOR
 from security_analyzer import SecurityAnalyzer
 from ai_summarizer import AISummarizer
+from visual_monitor import VisualMonitor  # For future use
 
 ai_summarizer = AISummarizer()
 
@@ -33,23 +34,25 @@ class WebsiteMonitor:
         }
         
         try:
-            response = requests.get(url, headers=headers, timeout=15)
+            response = requests.get(url, headers=headers, timeout=20)
             response_time = response.elapsed.total_seconds()
             
-            # Security analysis
+            content_hash = hashlib.md5(response.text[:5000].encode()).hexdigest()  # Partial hash for defacement
+            
+            # Security checks
             ssl_info = SecurityAnalyzer.check_ssl(url)
             header_analysis = SecurityAnalyzer.check_security_headers(response.headers)
             anomalies = SecurityAnalyzer.analyze_response(response)
             
-            content_hash = hashlib.md5(response.text.encode()).hexdigest()
-            
-            # AI Summary (only for successful pages with substantial content)
-            summary = ""
-            if response.status_code == 200 and len(response.text) > 500:
-                summary = ai_summarizer.summarize_page(response.text, name)
-            
             previous = self.state.get(url, {})
-            has_changed = previous.get("hash") != content_hash if previous else True
+            previous_hash = previous.get("hash")
+            
+            is_defaced = previous_hash and previous_hash != content_hash and len(response.text) > 1000
+            
+            # AI Summary for normal pages
+            summary = ""
+            if response.status_code == 200 and len(response.text) > 800:
+                summary = ai_summarizer.summarize_page(response.text, name)
             
             result = {
                 "name": name,
@@ -59,8 +62,8 @@ class WebsiteMonitor:
                 "ssl": ssl_info,
                 "security_score": header_analysis["score"],
                 "anomalies": anomalies,
-                "changed": has_changed,
-                "ai_summary": summary[:500] if summary else "",  # Limit length
+                "defaced": is_defaced,
+                "ai_summary": summary[:600] if summary else "",
                 "timestamp": datetime.now().isoformat()
             }
             
