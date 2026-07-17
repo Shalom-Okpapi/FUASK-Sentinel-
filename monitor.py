@@ -4,6 +4,9 @@ import json
 from datetime import datetime
 from .settings import PAGES_TO_MONITOR
 from .security_analyzer import SecurityAnalyzer
+from .ai_summarizer import AISummarizer
+
+ai_summarizer = AISummarizer()
 
 class WebsiteMonitor:
     def __init__(self):
@@ -30,18 +33,23 @@ class WebsiteMonitor:
         }
         
         try:
-            start_time = datetime.now()
             response = requests.get(url, headers=headers, timeout=15)
-            response_time = (datetime.now() - start_time).total_seconds()
+            response_time = response.elapsed.total_seconds()
             
             # Security analysis
             ssl_info = SecurityAnalyzer.check_ssl(url)
             header_analysis = SecurityAnalyzer.check_security_headers(response.headers)
-            anomalies = SecurityAnalyzer.analyze_response(response, baseline_time=response_time)
+            anomalies = SecurityAnalyzer.analyze_response(response)
             
             content_hash = hashlib.md5(response.text.encode()).hexdigest()
             
+            # AI Summary (only for successful pages with substantial content)
+            summary = ""
+            if response.status_code == 200 and len(response.text) > 500:
+                summary = ai_summarizer.summarize_page(response.text, name)
+            
             previous = self.state.get(url, {})
+            has_changed = previous.get("hash") != content_hash if previous else True
             
             result = {
                 "name": name,
@@ -51,7 +59,8 @@ class WebsiteMonitor:
                 "ssl": ssl_info,
                 "security_score": header_analysis["score"],
                 "anomalies": anomalies,
-                "changed": previous.get("hash") != content_hash if previous else True,
+                "changed": has_changed,
+                "ai_summary": summary[:500] if summary else "",  # Limit length
                 "timestamp": datetime.now().isoformat()
             }
             
